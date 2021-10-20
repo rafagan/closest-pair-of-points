@@ -33,7 +33,7 @@ int calcFileSize(FILE* file) {
     return size;
 }
 
-char* allocFileContent(const char* path) {
+char* allocReadFileContent(const char* path) {
     FILE* file = fopen(path, "r");
     unsigned int stringSize = calcFileSize(file);
     char* buffer = (char*) malloc(sizeof(char) * stringSize + 1);
@@ -49,7 +49,7 @@ char* allocFileContent(const char* path) {
     return buffer;
 }
 
-InputData* allocInputData(const char* input) {
+InputData* allocProcessInputData(const char* input) {
     int isFirstLine = 1;
     int isReadingX = 1;
     char buffer[50] = {};
@@ -103,11 +103,40 @@ void freeInputData(InputData* inputData) {
     free(inputData);
 }
 
-void logInputData(const InputData* inputData) {
-    for(unsigned int i = 0; i < inputData->count; i++) {
-        Point* point = inputData->points[i];
-        printf("(%f, %f)\n", point->x, point->y);
+void logInputData(const InputData* data) {
+    puts("Entrada :");
+    for(unsigned int i = 0; i < data->count; i++) {
+        Point* point = data->points[i];
+        printf("\t%d:(%f, %f)\n", i, point->x, point->y);
     }
+}
+
+OutputData findClosestPairOfPoints(const InputData* input) {
+    Point p1;
+    p1.x = 3.0;
+    p1.y = 4.0;
+    
+    Point p2;
+    p2.x = 5.0;
+    p2.y = 6.0;
+
+    OutputData output;
+    output.timeSecs = 1.0;
+    output.distance = 2.0;
+    output.p1 = p1;
+    output.p2 = p2;
+
+    return output;
+}
+
+void logOutputData(const OutputData* data) {
+    puts("Saída :");
+    printf("\tTempo: %f\n", data->timeSecs);
+    printf("\tDistância: %f\n", data->distance);
+    printf("\tx1: %f\n", data->p1.x);
+    printf("\ty1: %f\n", data->p1.y);
+    printf("\tx2: %f\n", data->p2.x);
+    printf("\ty2: %f\n", data->p2.y);
 }
 
 int main(int argc, char **argv) {
@@ -117,11 +146,14 @@ int main(int argc, char **argv) {
     }
 
     char* path = argv[1];
-    char* buffer = allocFileContent(path);
-    InputData* inputData = allocInputData(buffer);
+    char* buffer = allocReadFileContent(path);
+    InputData* inputData = allocProcessInputData(buffer);
     
     printf("%s\n", buffer);
     logInputData(inputData);
+
+    OutputData outputData = findClosestPairOfPoints(inputData);
+    logOutputData(&outputData);
 
     free(buffer);
     freeInputData(inputData);
