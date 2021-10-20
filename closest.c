@@ -18,6 +18,13 @@ typedef struct InputData {
     Point** points;
 } InputData;
 
+typedef struct OutputData {
+    double timeSecs;
+    double distance;
+    Point p1;
+    Point p2;
+} OutputData;
+
 int calcFileSize(FILE* file) {
     fseek(file, 0, SEEK_END);
     int size = ftell(file);
@@ -26,7 +33,7 @@ int calcFileSize(FILE* file) {
     return size;
 }
 
-char* allocFileContent(char* path) {
+char* allocFileContent(const char* path) {
     FILE* file = fopen(path, "r");
     unsigned int stringSize = calcFileSize(file);
     char* buffer = (char*) malloc(sizeof(char) * stringSize + 1);
@@ -42,7 +49,7 @@ char* allocFileContent(char* path) {
     return buffer;
 }
 
-InputData* allocInputData(char* input) {
+InputData* allocInputData(const char* input) {
     int isFirstLine = 1;
     int isReadingX = 1;
     char buffer[50] = {};
@@ -96,6 +103,13 @@ void freeInputData(InputData* inputData) {
     free(inputData);
 }
 
+void logInputData(const InputData* inputData) {
+    for(unsigned int i = 0; i < inputData->count; i++) {
+        Point* point = inputData->points[i];
+        printf("(%f, %f)\n", point->x, point->y);
+    }
+}
+
 int main(int argc, char **argv) {
     if(argc != 2) {
         puts("Invalid inputs. Usage: \n.$ /closest /path/to/genpoints/input.txt");
@@ -107,11 +121,7 @@ int main(int argc, char **argv) {
     InputData* inputData = allocInputData(buffer);
     
     printf("%s\n", buffer);
-
-    for(unsigned int i = 0; i < inputData->count; i++) {
-        Point* point = inputData->points[i];
-        printf("(%f, %f)\n", point->x, point->y);
-    }
+    logInputData(inputData);
 
     free(buffer);
     freeInputData(inputData);
