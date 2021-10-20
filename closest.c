@@ -8,6 +8,16 @@
 #include <ctype.h>
 #include <string.h>
 
+typedef struct Point {
+    double x;
+    double y;
+} Point;
+
+typedef struct InputData {
+    unsigned int count;
+    Point** points;
+} InputData;
+
 int calcFileSize(FILE* file) {
     fseek(file, 0, SEEK_END);
     int size = ftell(file);
@@ -16,7 +26,7 @@ int calcFileSize(FILE* file) {
     return size;
 }
 
-char* allocReadFileContent(char* path) {
+char* allocFileContent(char* path) {
     FILE* file = fopen(path, "r");
     unsigned int stringSize = calcFileSize(file);
     char* buffer = (char*) malloc(sizeof(char) * stringSize + 1);
@@ -32,38 +42,58 @@ char* allocReadFileContent(char* path) {
     return buffer;
 }
 
-char* proccessInputData(char* input) {
+InputData* allocInputData(char* input) {
     int isFirstLine = 1;
     int isReadingX = 1;
-    char buffer[50];
+    char buffer[50] = {};
+    
+    int pointCount;
+    Point** points = NULL;
+    Point* point = NULL;
+
     double x, y;
 
-    for(int i = 0; input[i] != '\0'; i++) {
+    for(unsigned int i = 0, j = 0; input[i] != '\0'; i++) {
         char c = input[i];
         if(!isdigit(c) && c != '.') {
             if(isFirstLine) {
+                pointCount = atoi(buffer);
+                points = malloc(sizeof(Point) * pointCount);
                 isFirstLine = 0;
-                continue;
-            }
-
-            if(isReadingX) {
-                x = strtod(buffer, NULL);
-                isReadingX = 0;
             } else {
-                y = strtod(buffer, NULL);
-                isReadingX = 1;
+                if(isReadingX) {
+                    x = strtod(buffer, NULL);
+                    isReadingX = 0;
+                } else {
+                    y = strtod(buffer, NULL);
+                    isReadingX = 1;
+
+                    point = malloc(sizeof(Point));
+                    point->x = x;
+                    point->y = y;
+                    points[j++] = point;
+                }
             }
 
             strcpy(buffer, "");
         } else {
-            if(!isFirstLine) {
-                char tmp[2] = {input[i], '\0'};
-                strcat(buffer, tmp);
-            }
+            char tmp[2] = {input[i], '\0'};
+            strcat(buffer, tmp);
         }
     }
 
-    return NULL;
+    InputData* data = malloc(sizeof(InputData));
+    data->count = pointCount;
+    data->points = points;
+
+    return data;
+}
+
+void freeInputData(InputData* inputData) {
+    for(unsigned int i = 0; i < inputData->count; i++) {
+        free(inputData->points[i]);
+    }
+    free(inputData);
 }
 
 int main(int argc, char **argv) {
@@ -73,9 +103,18 @@ int main(int argc, char **argv) {
     }
 
     char* path = argv[1];
-    char* buffer = allocReadFileContent(path);
-    proccessInputData(buffer);
+    char* buffer = allocFileContent(path);
+    InputData* inputData = allocInputData(buffer);
+    
+    printf("%s\n", buffer);
+
+    for(unsigned int i = 0; i < inputData->count; i++) {
+        Point* point = inputData->points[i];
+        printf("(%f, %f)\n", point->x, point->y);
+    }
+
     free(buffer);
+    freeInputData(inputData);
 
     return 0;
 }
