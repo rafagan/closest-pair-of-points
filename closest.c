@@ -7,6 +7,9 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#include <math.h>
+#include <float.h>
+#include <time.h>
 
 typedef struct Point {
     double x;
@@ -101,6 +104,7 @@ void freeInputData(InputData* inputData) {
         free(inputData->points[i]);
     }
     free(inputData);
+    inputData = NULL;
 }
 
 void logInputData(const InputData* data) {
@@ -111,7 +115,55 @@ void logInputData(const InputData* data) {
     }
 }
 
+double calcEuclidianDistance(const Point* p1, const Point* p2) {
+    return sqrt(pow(p1->x - p2->x, 2.0) + pow(p1->y - p2->y, 2.0));
+}
+
+OutputData findClosestPairOfPointsNaive(const InputData* input) {
+    Point* p1;
+    Point* p2;
+    double distance = DBL_MAX;
+
+    clock_t startTime = clock();
+
+    // Brute force time complexity: O(n^2)
+    for(int i = 0; i < input->count; i++) {
+        Point* _p1 = input->points[i];
+        for(int j = i + 1; j < input->count; j++) {
+            Point* _p2 = input->points[j];
+            double d = calcEuclidianDistance(_p1, _p2);
+            if(d < distance) {
+                distance = d;
+                p1 = _p1;
+                p2 = _p2;
+            }
+        }
+    }
+
+    clock_t endTime = clock();
+
+    OutputData output;
+    output.timeSecs = (double)(endTime - startTime) / CLOCKS_PER_SEC;
+    output.distance = distance;
+    output.p1 = *p1;
+    output.p2 = *p2;
+
+    return output;
+}
+
+int sortAscendingComparator(const void* a, const void* b) {
+   return ( *(int*)a - *(int*)b );
+}
+
 OutputData findClosestPairOfPoints(const InputData* input) {
+    // qsort: quicksort, complexidade O(nlogn)
+
+    int values[] = { 15, 30, 10, 20, 25 };
+    qsort(values, 5, sizeof(int), sortAscendingComparator);
+    for(int i = 0 ; i < 5; i++ ) {
+      printf("%i ", values[i]);
+   }
+
     Point p1;
     p1.x = 3.0;
     p1.y = 4.0;
@@ -129,14 +181,26 @@ OutputData findClosestPairOfPoints(const InputData* input) {
     return output;
 }
 
-void logOutputData(const OutputData* data) {
-    puts("Saída :");
-    printf("\tTempo: %f\n", data->timeSecs);
-    printf("\tDistância: %f\n", data->distance);
-    printf("\tx1: %f\n", data->p1.x);
-    printf("\ty1: %f\n", data->p1.y);
-    printf("\tx2: %f\n", data->p2.x);
-    printf("\ty2: %f\n", data->p2.y);
+void logOutputData(const OutputData* data, int isVerbose) {
+    if(isVerbose) {
+        puts("Saída :");
+        printf("\tTempo: %f\n", data->timeSecs);
+        printf("\tDistância: %f\n", data->distance);
+        printf("\tx1: %f\n", data->p1.x);
+        printf("\ty1: %f\n", data->p1.y);
+        printf("\tx2: %f\n", data->p2.x);
+        printf("\ty2: %f\n", data->p2.y);
+    } else {
+        printf(
+            "%.6f %.6f %.6f %.6f %.6f %.6f\n", 
+            data->timeSecs,
+            data->distance,
+            data->p1.x,
+            data->p1.y,
+            data->p2.x,
+            data->p2.y
+        );
+    }
 }
 
 int main(int argc, char **argv) {
@@ -149,11 +213,12 @@ int main(int argc, char **argv) {
     char* buffer = allocReadFileContent(path);
     InputData* inputData = allocProcessInputData(buffer);
     
-    printf("%s\n", buffer);
-    logInputData(inputData);
+    // printf("%s\n", buffer);
+    // logInputData(inputData);
 
-    OutputData outputData = findClosestPairOfPoints(inputData);
-    logOutputData(&outputData);
+    OutputData outputData = findClosestPairOfPointsNaive(inputData);
+    // OutputData outputData = findClosestPairOfPoints(inputData);
+    logOutputData(&outputData, 0);
 
     free(buffer);
     freeInputData(inputData);
