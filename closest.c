@@ -173,7 +173,7 @@ int sortPointsByYAscendingComparator(const void* a, const void* b) {
    return y1 - y2;
 }
 
-InputData findPointsInBorderYAxisSorted(InputData input, const Point* midPoint, double delta) {
+InputData findPointsInStripeYAxisSorted(InputData input, const Point* midPoint, double delta) {
     InputData output;
     output.points = malloc(sizeof(Point) * input.count);
     output.count = 0;
@@ -259,17 +259,21 @@ OutputData allocFindClosestPairOfPointsRecursive(
         // Isso faz com que essa parte do algoritmo seja O(1), e o todo seja O(nlogn)
 
         const Point* midPoint = input.points[median];
-        InputData stripePointsData = findPointsInBorderYAxisSorted(
+        InputData stripePointsData = findPointsInStripeYAxisSorted(
             input, midPoint, delta
         );
 
         for(int i = 0; i < stripePointsData.count; i++) {
-            Point* p = stripePointsData.points[i];
-            double d = calcEuclidianDistance(midPoint, p);
-            if(d < delta) {
-                output.p1 = *midPoint;
-                output.p2 = *p;
-                output.distance = d;
+            Point* p1 = stripePointsData.points[i];
+            for(int j = i + 1; j < stripePointsData.count; j++) {
+                Point* p2 = stripePointsData.points[j];
+                if(p2->y - p1->y >= output.distance) break;
+                double d = calcEuclidianDistance(p1, p2);
+                if(d < output.distance) {
+                    output.distance = d;
+                    output.p1 = *p2;
+                    output.p2 = *p2;
+                }
             }
         }
 
