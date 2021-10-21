@@ -349,6 +349,7 @@ int main(int argc, char **argv) {
     OutputData outputData2 = findClosestPairOfPoints(inputData);
     logOutputData(&outputData2, 0);
 
+    freeInputDataPoints(inputData);
     free(buffer);
 
     return 0;
