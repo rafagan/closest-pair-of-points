@@ -343,11 +343,11 @@ int main(int argc, char **argv) {
     // printf("%s\n", buffer);
     // logInputData(inputData);
 
-    OutputData outputData1 = findClosestPairOfPointsNaive(inputData);
-    logOutputData(&outputData1, 1);
+    // OutputData outputData1 = findClosestPairOfPointsNaive(inputData);
+    // logOutputData(&outputData1, 0);
 
     OutputData outputData2 = findClosestPairOfPoints(inputData);
-    logOutputData(&outputData2, 1);
+    logOutputData(&outputData2, 0);
 
     free(buffer);
 
