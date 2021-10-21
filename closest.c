@@ -173,7 +173,7 @@ int sortPointsByYAscendingComparator(const void* a, const void* b) {
    return y1 - y2;
 }
 
-InputData allocFindPointsInStripeYAxisSorted(InputData input, const Point* midPoint, double delta) {
+InputData findPointsInBorderYAxisSorted(InputData input, const Point* midPoint, double delta) {
     InputData output;
     output.points = malloc(sizeof(Point) * input.count);
     output.count = 0;
@@ -191,7 +191,7 @@ InputData allocFindPointsInStripeYAxisSorted(InputData input, const Point* midPo
     return output;
 }
 
-OutputData findClosestPairOfPointsRecursive(
+OutputData allocFindClosestPairOfPointsRecursive(
     InputData input,
     unsigned int startIndex, 
     unsigned int endIndex
@@ -236,8 +236,8 @@ OutputData findClosestPairOfPointsRecursive(
         const unsigned int rightStart = median;
         const unsigned int rightEnd = endIndex;
 
-        const OutputData outputLeft = findClosestPairOfPointsRecursive(input, leftStart, leftEnd);
-        const OutputData outputRight = findClosestPairOfPointsRecursive(input, rightStart, rightEnd);
+        const OutputData outputLeft = allocFindClosestPairOfPointsRecursive(input, leftStart, leftEnd);
+        const OutputData outputRight = allocFindClosestPairOfPointsRecursive(input, rightStart, rightEnd);
         const double delta = min2(outputLeft.distance, outputRight.distance);
 
         if(isEqual(delta, outputLeft.distance)) {
@@ -252,30 +252,27 @@ OutputData findClosestPairOfPointsRecursive(
         //  do que o delta encontrado
         //  Portanto, o range em x fará uma faixa que tem largura 2 * delta
         // Fazendo uma análise cuidadosa, é possível perceber que em uma área
-        //  com largura 2delta e altura 2delta próxima dos botões existem no máximo 8 pontos
+        //  com largura 2delta e altura delta próxima dos botões existem no máximo 8 pontos
         //  que podem ter uma distância menor, representando os 8 quadrantes,
         //  4 à esquerda da borda e 4 à direita
         // Considerando que um dos 8 pontos é o nosso encontrado, restam 7 comparações
         // Isso faz com que essa parte do algoritmo seja O(1), e o todo seja O(nlogn)
 
         const Point* midPoint = input.points[median];
-        InputData stripePointsData = allocFindPointsInStripeYAxisSorted(
+        InputData stripePointsData = findPointsInBorderYAxisSorted(
             input, midPoint, delta
         );
 
         for(int i = 0; i < stripePointsData.count; i++) {
-            Point* p1 = stripePointsData.points[i];
-            for(int j = 1; j < min2(i + 7, stripePointsData.count); j++) {
-                Point* p2 = stripePointsData.points[j];
-                if(calcEuclidianDistance(p1, p2) < delta) {
-                    output.p1 = *p1;
-                    output.p2 = *p2;
-                    output.distance = delta;
-                }
+            Point* p = stripePointsData.points[i];
+            double d = calcEuclidianDistance(midPoint, p);
+            if(d < delta) {
+                output.p1 = *midPoint;
+                output.p2 = *p;
+                output.distance = d;
             }
         }
 
-        
         free(stripePointsData.points);
     }
 
@@ -295,7 +292,7 @@ OutputData findClosestPairOfPoints(InputData input) {
 
     unsigned int startIndex = 0;
     unsigned int endIndex = input.count - 1;
-    OutputData output = findClosestPairOfPointsRecursive(
+    OutputData output = allocFindClosestPairOfPointsRecursive(
         sortedInputData, 0, input.count - 1
     );
     
