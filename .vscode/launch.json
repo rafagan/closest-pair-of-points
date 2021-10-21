@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${fileDirname}/${fileBasenameNoExtension}",
-            "args": ["./genpoints/input.txt"],
+            "args": ["./input.txt"],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],

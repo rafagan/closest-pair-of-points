@@ -119,6 +119,18 @@ double calcEuclidianDistance(const Point* p1, const Point* p2) {
     return sqrt(pow(p1->x - p2->x, 2.0) + pow(p1->y - p2->y, 2.0));
 }
 
+double min2(double a, double b) {
+    return a < b ? a : b;
+}
+
+double min3(double a, double b, double c) {
+    return min2(min2(a, b), c);
+}
+
+int isEqual(double a, double b) {
+    return fabs(a - b) < 0.000000001;
+}
+
 OutputData findClosestPairOfPointsNaive(const InputData* input) {
     Point* p1;
     Point* p2;
@@ -151,33 +163,100 @@ OutputData findClosestPairOfPointsNaive(const InputData* input) {
     return output;
 }
 
-int sortAscendingComparator(const void* a, const void* b) {
-   return ( *(int*)a - *(int*)b );
+int sortPointsByXAscendingComparator(const void* a, const void* b) {
+   const double x1 = (*((Point**)a))->x;
+   const double x2 = (*(Point**)b)->x;
+   return x1 - x2;
+}
+
+OutputData findClosestPairOfPointsRecursive(
+    const Point** points, 
+    unsigned int startIndex, 
+    unsigned int endIndex
+) {
+    OutputData output;
+    const unsigned int length = endIndex - startIndex + 1;
+
+    if(length == 2) {
+        output.p1 = *points[startIndex];
+        output.p2 = *points[endIndex];
+        output.distance = calcEuclidianDistance(&output.p1, &output.p2);
+    } else if(length == 3) {
+        const unsigned int first = startIndex;
+        const unsigned int second = startIndex + 1;
+        const unsigned int third = endIndex;
+        
+        const double d1 = calcEuclidianDistance(points[first], points[second]);
+        const double d2 = calcEuclidianDistance(points[first], points[third]);
+        const double d3 = calcEuclidianDistance(points[second], points[third]);
+        output.distance = min3(d1, d2, d3);
+
+        if(isEqual(output.distance, d1)) {
+            output.p1 = *points[first];
+            output.p2 = *points[second];
+        } else if(isEqual(output.distance, d2)) {
+            output.p1 = *points[first];
+            output.p2 = *points[third];
+        } else {
+            output.p1 = *points[second];
+            output.p2 = *points[third];
+        }
+    } else {
+        // Algoritmo - Parte 1:
+        // Dividir e conquistar para encontrar a menor distância em x entre dois pontos
+        // deltaLeft, deltaRight, median
+        // delta = min(deltaLeft, deltaRight)
+        // Problema: Ao encontrar, não é garantido que seja menor distância na borda
+
+        const unsigned int median = startIndex + length / 2;
+        const unsigned int leftStart = startIndex;
+        const unsigned int leftEnd = median - 1;
+        const unsigned int rightStart = median;
+        const unsigned int rightEnd = endIndex;
+
+        const OutputData outputLeft = findClosestPairOfPointsRecursive(points, leftStart, leftEnd);
+        const OutputData outputRight = findClosestPairOfPointsRecursive(points, rightStart, rightEnd);
+        const double delta = min2(outputLeft.distance, outputRight.distance);
+
+        if(isEqual(delta, outputLeft.distance)) {
+            output.p1 = *points[leftStart];
+            output.p2 = *points[leftEnd];
+        } else {
+            output.p1 = *points[rightStart];
+            output.p2 = *points[rightEnd];
+        }
+
+        output.distance = delta;
+
+        // Algoritmo - Parte 2:
+        // Depois de encontrar a menor distância de delta em x, procuramos entre:
+        //  [x - delta, x + delta] porque qualquer um maior que isso teria um x maior
+        //  do que a menor distância em x
+        //  Portanto, o range em x fará uma faixa que tem largura 2 * delta
+        // Quadrado 2 * delta largura por delta altura
+    }
+
+    return output;
 }
 
 OutputData findClosestPairOfPoints(const InputData* input) {
-    // qsort: quicksort, complexidade O(nlogn)
+    clock_t startTime = clock();
 
-    int values[] = { 15, 30, 10, 20, 25 };
-    qsort(values, 5, sizeof(int), sortAscendingComparator);
-    for(int i = 0 ; i < 5; i++ ) {
-      printf("%i ", values[i]);
-   }
-
-    Point p1;
-    p1.x = 3.0;
-    p1.y = 4.0;
+    const Point** sortedPoints = malloc(sizeof(Point) * input->count);
+    memcpy(sortedPoints, input->points, sizeof(Point) * input->count);
     
-    Point p2;
-    p2.x = 5.0;
-    p2.y = 6.0;
+    // C std qsort (quicksort): O(nlogn)
+    qsort(sortedPoints, input->count, sizeof(Point*), sortPointsByXAscendingComparator);
 
-    OutputData output;
-    output.timeSecs = 1.0;
-    output.distance = 2.0;
-    output.p1 = p1;
-    output.p2 = p2;
+    unsigned int startIndex = 0;
+    unsigned int endIndex = input->count - 1;
+    OutputData output = findClosestPairOfPointsRecursive(sortedPoints, 0, input->count - 1);
+    
+    free(sortedPoints);
 
+    clock_t endTime = clock();
+    output.timeSecs = (double)(endTime - startTime) / CLOCKS_PER_SEC;
+    
     return output;
 }
 
@@ -216,9 +295,11 @@ int main(int argc, char **argv) {
     // printf("%s\n", buffer);
     // logInputData(inputData);
 
-    OutputData outputData = findClosestPairOfPointsNaive(inputData);
-    // OutputData outputData = findClosestPairOfPoints(inputData);
-    logOutputData(&outputData, 0);
+    OutputData outputData1 = findClosestPairOfPointsNaive(inputData);
+    logOutputData(&outputData1, 1);
+
+    OutputData outputData2 = findClosestPairOfPoints(inputData);
+    logOutputData(&outputData2, 1);
 
     free(buffer);
     freeInputData(inputData);
