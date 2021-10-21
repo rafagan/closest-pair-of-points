@@ -1,6 +1,11 @@
 {
     "files.associations": {
         "limits.h": "c",
-        "iterator": "c"
+        "iterator": "c",
+        "__bit_reference": "c",
+        "algorithm": "c",
+        "bitset": "c",
+        "chrono": "c",
+        "unordered_map": "c"
     }
 }
